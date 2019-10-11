@@ -8,7 +8,7 @@ API_URL = "https://www.skyscanner.net/g/chiron/api/v1/flights/browse/browsequote
 
 headers = {"user-agent": "HackUPC19", "Accept": "application/json", "api-key": API_KEY}
 
-
+# request cheapest fare for selected connection
 def get_cheapest_fare(
     country="DE",
     currency="EUR",
