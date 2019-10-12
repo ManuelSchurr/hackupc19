@@ -183,6 +183,7 @@ def find_flight_route(start_airports, destination_airports):
 
             # Extract itinerary
             itinerary = sorted_response["Itineraries"][0]
+            itinerary["PricingOptions"] = itinerary["PricingOptions"][0]
 
             # Extract legs
             legs = [
@@ -241,5 +242,50 @@ def find_flight_route(start_airports, destination_airports):
     return routes
 
 
-find_flight_route(["FRA", "STR"], ["TXL", "MUC"])
+# find_flight_route(["FRA", "STR"], ["TXL", "MUC"])
+
+
+def combine_car_plane(cars1, flights, cars2):
+    # Route = car1 + flight + car2
+    combined_route = []
+
+    for car1 in cars1:
+        for flight in flights:
+            for car2 in cars2:
+                car1_start = car1["Start"]
+                flight_start = flight["From"]
+                car2_start = car2["Start"]
+                car2_destination = car2["Destination"]
+
+                if not car1["DestinationAirport"] == flight_start:
+                    continue
+                if not flight["DestinationAirport"] == car2_start:
+                    continue
+
+                car1_price = car1["Car"]["price_all_days"]
+                flight_price = flight["Itinerary"]["PricingOptions"]["Price"]
+                car2_price = car2["Car"]["price_all_days"]
+
+                total_price = car1_price + flight_price + car2_price
+
+                combined_route.append(
+                    {
+                        "Car1Start": car1_start,
+                        "FlightStart": flight_start,
+                        "Car2Start": car2_start,
+                        "Car2Destination": car2_destination,
+                        "TotalPrice": total_price,
+                    }
+                )
+
+    # Not sure this will work
+    sorted_combined_route = dict(combined_route)
+    sorted_combined_route = sorted(combined_route, key=lambda x: x["TotalPrice"])
+
+    return sorted_combined_route
+
+
+flights = find_flight_route(["FRA", "STR"], ["TXL", "MUC"])
+
+combine_car_plane([""], flights, [""])
 
