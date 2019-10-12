@@ -19,6 +19,9 @@ HEADERS = {
     "Content-Type": "application/x-www-form-urlencoded",
 }
 
+iata_file = open("iatacodes.txt", "r")
+iata_codes = iata_file.read().split(",")
+
 # Contains default testing parameters, can - and should - be overwritten
 # def browse_quotes(
 #     country="DE",
@@ -98,11 +101,13 @@ def initiate_session(json_params):
     post_url = f"{API_URL}flights/search/pricing/v1.0/"
 
     response = requests.post(post_url, json=json_params, headers=HEADERS)
-    session_id = response.json()["session_id"]
+    try:
+        session_id = response.json()["session_id"]
+        print(f"Initiate Session: HTTP {response.status_code}")
 
-    print(f"Initiate Session: HTTP {response.status_code}")
-
-    return session_id
+        return session_id
+    except:
+        print("skip dis crap")
 
 
 def get_airport_id(places, airport_code):
@@ -175,71 +180,82 @@ def get_live_prices(
 # get_live_prices()
 
 
-def find_flight_routes(start_airports, destination_airports):
+def find_flight_routes(start_airports, destination_airports, start_date, end_date):
     routes = []
+
+    print(f"all start_airports: {start_airports}")
+    print(f"all destination_airports: {destination_airports}")
+
     for start_airport in start_airports:
         for destination_airport in destination_airports:
             print(
                 f"Finding best connection. Currently checking: {start_airport} -> {destination_airport}"
             )
-            sorted_response = get_live_prices(
-                origin_place=start_airport, destination_place=destination_airport
-            )
-
-            # Extract itinerary
-            itinerary = sorted_response["Itineraries"][0]
-            itinerary["PricingOptions"] = itinerary["PricingOptions"][0]
-
-            # Extract legs
-            legs = [
-                next(
-                    leg
-                    for leg in sorted_response["Legs"]
-                    if leg["Id"] == itinerary["OutboundLegId"]
-                ),
-                next(
-                    leg
-                    for leg in sorted_response["Legs"]
-                    if leg["Id"] == itinerary["InboundLegId"]
-                ),
-            ]
-            leg0_segments = []
-            leg1_segments = []
-
-            # Extract legs
-            for segment_id in legs[0]["SegmentIds"]:
-                leg0_segments.append(
-                    next(
-                        seg
-                        for seg in sorted_response["Segments"]
-                        if seg["Id"] == segment_id
-                    )
-                )
-            for segment_id in legs[1]["SegmentIds"]:
-                leg1_segments.append(
-                    next(
-                        seg
-                        for seg in sorted_response["Segments"]
-                        if seg["Id"] == segment_id
-                    )
+            try:
+                sorted_response = get_live_prices(
+                    origin_place=start_airport,
+                    destination_place=destination_airport,
+                    outbound_partial_date=start_date,
+                    inbound_partial_date=end_date,
                 )
 
-            segments = [
-                {
-                    "OutboundLegSegments": leg0_segments,
-                    "InboundLegSegments": leg1_segments,
-                }
-            ]
+                # Extract itinerary
+                itinerary = sorted_response["Itineraries"][0]
+                itinerary["PricingOptions"] = itinerary["PricingOptions"][0]
 
-            routes.append(
-                {
-                    "Start": start_airport,
-                    "Destination": destination_airport,
-                    "Itinerary": itinerary,
-                    "Legs": legs,
-                    "Segments": segments,
-                }
-            )
+                # Extract legs
+                legs = [
+                    next(
+                        leg
+                        for leg in sorted_response["Legs"]
+                        if leg["Id"] == itinerary["OutboundLegId"]
+                    ),
+                    next(
+                        leg
+                        for leg in sorted_response["Legs"]
+                        if leg["Id"] == itinerary["InboundLegId"]
+                    ),
+                ]
+                leg0_segments = []
+                leg1_segments = []
+
+                # Extract legs
+                for segment_id in legs[0]["SegmentIds"]:
+                    leg0_segments.append(
+                        next(
+                            seg
+                            for seg in sorted_response["Segments"]
+                            if seg["Id"] == segment_id
+                        )
+                    )
+                for segment_id in legs[1]["SegmentIds"]:
+                    leg1_segments.append(
+                        next(
+                            seg
+                            for seg in sorted_response["Segments"]
+                            if seg["Id"] == segment_id
+                        )
+                    )
+
+                segments = [
+                    {
+                        "OutboundLegSegments": leg0_segments,
+                        "InboundLegSegments": leg1_segments,
+                    }
+                ]
+
+                routes.append(
+                    {
+                        "Start": start_airport,
+                        "Destination": destination_airport,
+                        "Itinerary": itinerary,
+                        "Legs": legs,
+                        "Segments": segments,
+                    }
+                )
+            except Exception as e:
+                print("oops")
+                print(f"[!] Exception: {e}")
 
     with open("test.json", "w") as outfile:
         json.dump(routes, outfile)
@@ -247,7 +263,7 @@ def find_flight_routes(start_airports, destination_airports):
     return routes
 
 
-def startCarHireLiveSession(
+def start_car_hire_live_session(
     market="DE",
     currency="EUR",
     locale="de-DE",
@@ -258,7 +274,7 @@ def startCarHireLiveSession(
     driverage="21",
 ):
 
-    req_url = f"{API_URL}/carhire/liveprices/v2/{market}/{currency}/{locale}/{pickupplace}/{dropoffplace}/{pickupdatetime}/{dropoffdatetime}/{driverage}"
+    req_url = f"{API_URL}carhire/liveprices/v2/{market}/{currency}/{locale}/{pickupplace}/{dropoffplace}/{pickupdatetime}/{dropoffdatetime}/{driverage}"
     response = requests.post(req_url, headers=HEADERS)
 
     session_id = response.json()["session_id"]
@@ -268,38 +284,72 @@ def startCarHireLiveSession(
 
 def get_cheapest_ride(start_city, destination_city, outbound_date, inbound_date):
 
-    session_id = startCarHireLiveSession(
+    # first airport
+    session_id = start_car_hire_live_session(
         pickupplace=start_city,
         dropoffplace=destination_city,
-        pickupdatetime=outbound_date,
-        dropoffdatetime=outbound_date,
+        pickupdatetime=f"{outbound_date}T08:00",
+        dropoffdatetime=f"{outbound_date}T18:00",
     )
-    req_url = f"{API_URL}/carhire/liveprices/v2/?session_id={session_id}"
-    outbound_ride = requests.get(req_url, headers=HEADERS)
+    print(f"session {session_id}")
 
-    session_id = startCarHireLiveSession(
+    req_url = f"{API_URL}/carhire/liveprices/v2/?session_id={session_id}"
+
+    for i in range(5):
+        outbound_ride = requests.get(req_url, headers=HEADERS)
+        time.sleep(3)
+
+    print(f"status code outbound: {outbound_ride.status_code}")
+
+    with open("rides.json", "w") as outfile:
+        json.dump(outbound_ride.json(), outfile)
+
+    # last airport
+    session_id = start_car_hire_live_session(
         pickupplace=destination_city,
         dropoffplace=start_city,
-        pickupdatetime=inbound_date,
-        dropoffdatetime=inbound_date,
+        pickupdatetime=f"{inbound_date}T10:00",
+        dropoffdatetime=f"{inbound_date}T20:00",
     )
+    print(f"session {session_id}")
     req_url = f"{API_URL}/carhire/liveprices/v2/?session_id={session_id}"
-    inbound_ride = requests.get(req_url, headers=HEADERS)
+
+    for i in range(5):
+        inbound_ride = requests.get(req_url, headers=HEADERS)
+        time.sleep(3)
+
+    print(f"status code inbound: {inbound_ride.status_code}")
+
+    with open("rides2.json", "w") as outfile:
+        json.dump(outbound_ride.json(), outfile)
 
     car_connection = []
 
-    car_connection.append(
-        {
-            "From": start_city,
-            "To": destination_city,
-            "Rides": [outbound_ride.json()["cars"][0], inbound_ride.json()["cars"][0]],
-        }
-    )
+    try:
+        car_connection.append(
+            {
+                "Start": start_city,
+                "Destination": destination_city,
+                "Rides": [
+                    outbound_ride.json()["cars"][0],
+                    inbound_ride.json()["cars"][0],
+                ],
+            }
+        )
+    except:
+        print("skip dis shit")
 
-    with open("rides.json", "w") as outfile:
+    with open("car_connection.json", "w") as outfile:
         json.dump(car_connection, outfile)
 
     return car_connection
+
+
+def validate_iata_codes(codes):
+    for code in codes:
+        if code not in iata_codes:
+            codes.remove(code)
+    return codes
 
 
 def do_shit(
@@ -311,19 +361,26 @@ def do_shit(
     currency="EUR",
     locale="de-DE",
 ):
-    start_airports = get_nearest_airports(start_city)
-    destination_airports = get_nearest_airports(destination_city)
+
+    start_airports = validate_iata_codes(get_nearest_airports(start_city))
+    destination_airports = validate_iata_codes(get_nearest_airports(destination_city))
+
+    print(f"num of start_airports: {len(start_airports)}")
+    print(f"num of destination_airports: {len(destination_airports)}")
 
     cars1 = []
     cars2 = []
 
     for airport in start_airports:
+        print(f"start_airport: {airport}")
         cars1.append(
             get_cheapest_ride(
                 get_coordinates_skyscanner(start_city), airport, start_date, end_date
             )
         )
     for airport in destination_airports:
+        print(f"destination_airport: {airport}")
+
         cars2.append(
             get_cheapest_ride(
                 airport,
@@ -333,24 +390,53 @@ def do_shit(
             )
         )
 
-    flights = find_flight_routes(start_date, destination_city)
+    flights = find_flight_routes(
+        start_airports, destination_airports, start_date=start_date, end_date=end_date
+    )
 
     return combine_car_plane(cars1, flights, cars2)
-
 
 
 def combine_car_plane(cars1, flights, cars2):
     # Route = car1 + flight + car2
     combined_route = []
+    cars1 = cars1[0]
+    cars2 = cars2[0]
+
+    # print(cars1)
+    # print(cars2)
+    # print(flights)
+
+    with open("car1.json", "w") as outfile:
+        json.dump(cars1, outfile)
+
+    with open("car2.json", "w") as outfile:
+        json.dump(cars2, outfile)
 
     for car1 in cars1:
         for flight in flights:
             for car2 in cars2:
+                if not car1:
+                    continue
+                if not flight:
+                    continue
+                if not car2:
+                    continue
+                # try:
                 car1_start = car1["Start"]
                 car1_destination = car1["Destination"]
 
                 flight_start = flight["Start"]
                 flight_destination = flight["Destination"]
+
+                # print(f"car1start: {car1_start}")
+                # print(f"car1destination: {car1_destination}")
+
+                # print(f"flightstart: {flight_start}")
+                # print(f"flightdestination: {flight_destination}")
+
+                # print(f"car2start: {car2_start}")
+                # print(f"car2destination: {car2_destination}")
 
                 # TODO: Add airports back into the flights dict
                 # TODO: Consider flight stops
@@ -366,9 +452,15 @@ def combine_car_plane(cars1, flights, cars2):
                 if not flight_destination == car2_start:
                     continue
 
-                car1_price = car1["Car"]["price_all_days"]
+                car1_price = (
+                    car1["Rides"][0]["price_all_days"]
+                    + car1["Rides"][1]["price_all_days"]
+                )
                 flight_price = flight["Itinerary"]["PricingOptions"]["Price"]
-                car2_price = car2["Car"]["price_all_days"]
+                car2_price = (
+                    car2["Rides"][0]["price_all_days"]
+                    + car2["Rides"][1]["price_all_days"]
+                )
 
                 total_price = car1_price + flight_price + car2_price
 
@@ -381,15 +473,32 @@ def combine_car_plane(cars1, flights, cars2):
                         "TotalPrice": total_price,
                     }
                 )
+                # except Exception as e:
+                # print("poof")
+                # print(e)
+
+    with open("final1.json", "w") as outfile:
+        json.dump(combined_route, outfile)
 
     # Not sure this will work
     sorted_combined_route = dict(combined_route)
     sorted_combined_route = sorted(combined_route, key=lambda x: x["TotalPrice"])
 
+    with open("final_sorted.json", "w") as outfile:
+        json.dump(sorted_combined_route, outfile)
+
     return sorted_combined_route
 
 
-flights = find_flight_routes(["FRA", "STR"], ["TXL", "MUC"])
+# flights = find_flight_routes(["FRA", "STR"], ["TXL", "MUC"])
 
 # combine_car_plane([""], flights, [""])
+
+
+do_shit(
+    start_city="Darmstadt",
+    destination_city="Potsdam",
+    start_date="2019-11-11",
+    end_date="2019-11-20",
+)
 

@@ -40,12 +40,13 @@ def get_coordinates_skyscanner(city):
     Lat = response.json()["results"][0]["geometry"]["lat"]
     Long = response.json()["results"][0]["geometry"]["lng"]
 
+    print(f"coords: {Lat},{Long}-latlong")
     return f"{Lat},{Long}-latlong"
 
 
 # calls getCoordinates which translates the City Name into coordinates
 # takes coordiantes and searchRadius to output nearestAirports
-def get_nearest_airports(city, searchRadius=100):
+def get_nearest_airports(city, searchRadius=50):
     city_coordinates = get_coordinates_skyscanner(city)
     lat = city_coordinates.partition(",")[0]
     lng = city_coordinates.partition(",")[2].partition("-")[0]
@@ -66,8 +67,10 @@ def get_nearest_airports(city, searchRadius=100):
 
     # TODO: Extract Airport Symbols and return array of symbols
     airport_codes = []
-    for airport_code in response.json()["code"]:
-        airport_codes.append(airport_code)
 
+    for airport_code in response.json():
+        airport_codes.append(airport_code["code"])
+
+    print(f"airport_codes (unclean): {airport_codes}")
     return airport_codes
 
