@@ -15,65 +15,65 @@ HEADERS = {
 }
 
 # Contains default testing parameters, can - and should - be overwritten
-def browse_quotes(
-    country="DE",
-    currency="EUR",
-    locale="DE",
-    origin_place="FRA",
-    destination_place="TXL",
-    outbound_partial_date="2019-11-11",
-    inbound_partial_date="2019-11-12",
-):
+# def browse_quotes(
+#     country="DE",
+#     currency="EUR",
+#     locale="DE",
+#     origin_place="FRA",
+#     destination_place="TXL",
+#     outbound_partial_date="2019-11-11",
+#     inbound_partial_date="2019-11-12",
+# ):
 
-    req_url = f"{API_URL}/flights/browse/browsequotes/v1.0/{country}/{currency}/{locale}/{origin_place}/{destination_place}/{outbound_partial_date}/{inbound_partial_date}/"
-    response = requests.get(req_url, headers=HEADERS)
+#     req_url = f"{API_URL}/flights/browse/browsequotes/v1.0/{country}/{currency}/{locale}/{origin_place}/{destination_place}/{outbound_partial_date}/{inbound_partial_date}/"
+#     response = requests.get(req_url, headers=HEADERS)
 
-    with open("quotes.json", "w") as outfile:
-        json.dump(response.json(), outfile)
-
-
-def browse_routes(
-    country="DE",
-    currency="EUR",
-    locale="DE",
-    origin_place="FRA",
-    destination_place="TXL",
-    outbound_partial_date="2019-11-11",
-    inbound_partial_date="2019-11-12",
-):
-    req_url = f"{API_URL}/flights/browse/browseroutes/v1.0/{country}/{currency}/{locale}/{origin_place}/{destination_place}/{outbound_partial_date}/{inbound_partial_date}/"
-    response = requests.get(req_url, headers=HEADERS)
-
-    with open("routes.json", "w") as outfile:
-        json.dump(response.json(), outfile)
+#     with open("quotes.json", "w") as outfile:
+#         json.dump(response.json(), outfile)
 
 
-def browse_dates(
-    country="DE",
-    currency="EUR",
-    locale="DE",
-    origin_place="FRA",
-    destination_place="TXL",
-    outbound_partial_date="2019-11-11",
-    inbound_partial_date="2019-11-12",
-):
+# def browse_routes(
+#     country="DE",
+#     currency="EUR",
+#     locale="DE",
+#     origin_place="FRA",
+#     destination_place="TXL",
+#     outbound_partial_date="2019-11-11",
+#     inbound_partial_date="2019-11-12",
+# ):
+#     req_url = f"{API_URL}/flights/browse/browseroutes/v1.0/{country}/{currency}/{locale}/{origin_place}/{destination_place}/{outbound_partial_date}/{inbound_partial_date}/"
+#     response = requests.get(req_url, headers=HEADERS)
 
-    req_url = f"{API_URL}/flights/browse/browsedates/v1.0/{country}/{currency}/{locale}/{origin_place}/{destination_place}/{outbound_partial_date}/{inbound_partial_date}/"
-    response = requests.get(req_url, headers=HEADERS)
-
-    with open("dates.json", "w") as outfile:
-        json.dump(response.json(), outfile)
+#     with open("routes.json", "w") as outfile:
+#         json.dump(response.json(), outfile)
 
 
-def browse_dates_grid(
-    country="DE",
-    currency="EUR",
-    locale="DE",
-    origin_place="FRA",
-    destination_place="TXL",
-    outbound_partial_date="2019-11-11",
-    inbound_partial_date="2019-11-12",
-):
+# def browse_dates(
+#     country="DE",
+#     currency="EUR",
+#     locale="DE",
+#     origin_place="FRA",
+#     destination_place="TXL",
+#     outbound_partial_date="2019-11-11",
+#     inbound_partial_date="2019-11-12",
+# ):
+
+#     req_url = f"{API_URL}/flights/browse/browsedates/v1.0/{country}/{currency}/{locale}/{origin_place}/{destination_place}/{outbound_partial_date}/{inbound_partial_date}/"
+#     response = requests.get(req_url, headers=HEADERS)
+
+#     with open("dates.json", "w") as outfile:
+#         json.dump(response.json(), outfile)
+
+
+# def browse_dates_grid(
+#     country="DE",
+#     currency="EUR",
+#     locale="DE",
+#     origin_place="FRA",
+#     destination_place="TXL",
+#     outbound_partial_date="2019-11-11",
+#     inbound_partial_date="2019-11-12",
+# ):
 
     req_url = f"{API_URL}/flights/browse/browsegrid/v1.0/{country}/{currency}/{locale}/{origin_place}/{destination_place}/{outbound_partial_date}/{inbound_partial_date}/"
     response = requests.get(req_url, headers=HEADERS)
@@ -241,15 +241,16 @@ def find_flight_route(start_airports, destination_airports):
 
     return routes
 
+
 def startCarHireLiveSession(
-    market = "DE",
-    currency = "EUR",
-    locale = "de-DE",
-    pickupplace  = "50.110924,8.682127-latlong",
-    dropoffplace = "49.4875,8.466-latlong",
-    pickupdatetime = "2019-11-12T10:00", 
-    dropoffdatetime = "2019-11-13T10:00",
-    driverage = "21"
+    market="DE",
+    currency="EUR",
+    locale="de-DE",
+    pickupplace="50.110924,8.682127-latlong",
+    dropoffplace="49.4875,8.466-latlong",
+    pickupdatetime="2019-11-12T10:00",
+    dropoffdatetime="2019-11-13T10:00",
+    driverage="21",
 ):
 
     req_url = f"{API_URL}/carhire/liveprices/v2/{market}/{currency}/{locale}/{pickupplace}/{dropoffplace}/{pickupdatetime}/{dropoffdatetime}/{driverage}"
@@ -259,6 +260,7 @@ def startCarHireLiveSession(
 
     return session_id
 
+
 def getCheapestRide():
     session_id = startCarHireLiveSession()
 
@@ -267,10 +269,13 @@ def getCheapestRide():
 
     rides = []
 
-    rides.append({"From": "start", "To": "Destination", "Ride": response.json()["cars"][0]})
+    rides.append(
+        {"From": "start", "To": "Destination", "Ride": response.json()["cars"][0]}
+    )
 
-    with open ("rides.json", "w") as outfile:
+    with open("rides.json", "w") as outfile:
         json.dump(rides, outfile)
+
 
 def combine_car_plane(cars1, flights, cars2):
     # Route = car1 + flight + car2
