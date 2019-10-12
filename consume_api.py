@@ -253,7 +253,7 @@ def startCarHireLiveSession(
 ):
 
     req_url = f"{API_URL}/carhire/liveprices/v2/{market}/{currency}/{locale}/{pickupplace}/{dropoffplace}/{pickupdatetime}/{dropoffdatetime}/{driverage}"
-    response = requests.post(req_url, headers=heHEADERSaders)
+    response = requests.post(req_url, headers=HEADERS)
 
     session_id = response.json()["session_id"]
 
