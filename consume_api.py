@@ -1,5 +1,6 @@
 import requests
 import json
+import time
 
 
 API_KEY = "skyscanner-hackupc2019"
@@ -99,6 +100,10 @@ def initiate_session(json_params):
     return session_id
 
 
+def get_airport_id(places, airport_code):
+    return next(place for place in places if place["Code"] == airport_code)["Id"]
+
+
 def get_live_prices(
     country="DE",
     currency="EUR",
@@ -109,7 +114,7 @@ def get_live_prices(
     inbound_partial_date="2019-11-12",
     cabin_class="Economy",
     location_schema="iata",
-    adults=2,
+    adults=1,
 ):
     json_params = {
         "country": country,
@@ -124,14 +129,46 @@ def get_live_prices(
         "adults": adults,
     }
 
+    # Initiate the session and get the session id
     session_id = initiate_session(json_params)
 
-    # Poll the result
-    req_url = f"{API_URL}flights/search/pricing/v1.0/?session_id={session_id}"
-    response = requests.get(req_url, headers=HEADERS)
+    status = "UpdatesPending"
 
-    print(f"Get Live Prices: HTTP {response.status_code}")
+    while status == "UpdatesPending":
+        # Poll the result
+        req_url = f"{API_URL}flights/search/pricing/v1.0/?session_id={session_id}&stops=0&sortType=price&sortOrder=asc&originAirports=FRA&destinationAirports=TXL"
+        response = requests.get(req_url, headers=HEADERS)
+
+        status = response.json()["Status"]
+
+        print(f"Get Live Prices: HTTP {response.status_code}")
+        print(f"Status:{status}")
+
+        time.sleep(1)
+
+    itineraries = response.json()["Itineraries"]
+    legs = response.json()["Legs"]
+    segments = response.json()["Segments"]
+    places = response.json()["Places"]
+
+    # txl_id = get_airport_id(places, "TXL")
+    # fra_id = get_airport_id(places, "FRA")
+
+    sorted_response = dict(response.json())
+    sorted_response["Itineraries"] = sorted(
+        itineraries, key=lambda x: x["PricingOptions"][0]["Price"]
+    )
+
+    with open("raw_dump.json", "w") as outfile:
+        json.dump(response.json(), outfile)
+    with open("sorted.json", "w") as outfile:
+        json.dump(sorted_response, outfile)
 
 
 get_live_prices()
 
+
+# def find_flight_route(start_airports, destination_airports):
+#     for start_airport in start_airports:
+#         for destination_airport in destination_airports:
+#             pass
