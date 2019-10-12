@@ -1,6 +1,11 @@
 import requests
 import json
 import time
+from retrieve_nearest_airports import (
+    getCoordinates,
+    get_coordinates_skyscanner,
+    get_nearest_airports,
+)
 
 
 API_KEY = "skyscanner-hackupc2019"
@@ -170,7 +175,7 @@ def get_live_prices(
 # get_live_prices()
 
 
-def find_flight_route(start_airports, destination_airports):
+def find_flight_routes(start_airports, destination_airports):
     routes = []
     for start_airport in start_airports:
         for destination_airport in destination_airports:
@@ -261,20 +266,77 @@ def startCarHireLiveSession(
     return session_id
 
 
-def getCheapestRide():
-    session_id = startCarHireLiveSession()
+def get_cheapest_ride(start_city, destination_city, outbound_date, inbound_date):
 
+    session_id = startCarHireLiveSession(
+        pickupplace=start_city,
+        dropoffplace=destination_city,
+        pickupdatetime=outbound_date,
+        dropoffdatetime=outbound_date,
+    )
     req_url = f"{API_URL}/carhire/liveprices/v2/?session_id={session_id}"
-    response = requests.get(req_url, headers=HEADERS)
+    outbound_ride = requests.get(req_url, headers=HEADERS)
 
-    rides = []
+    session_id = startCarHireLiveSession(
+        pickupplace=destination_city,
+        dropoffplace=start_city,
+        pickupdatetime=inbound_date,
+        dropoffdatetime=inbound_date,
+    )
+    req_url = f"{API_URL}/carhire/liveprices/v2/?session_id={session_id}"
+    inbound_ride = requests.get(req_url, headers=HEADERS)
 
-    rides.append(
-        {"From": "start", "To": "Destination", "Ride": response.json()["cars"][0]}
+    car_connection = []
+
+    car_connection.append(
+        {
+            "From": start_city,
+            "To": destination_city,
+            "Rides": [outbound_ride.json()["cars"][0], inbound_ride.json()["cars"][0]],
+        }
     )
 
     with open("rides.json", "w") as outfile:
-        json.dump(rides, outfile)
+        json.dump(car_connection, outfile)
+
+    return car_connection
+
+
+def do_shit(
+    start_city,
+    destination_city,
+    start_date,
+    end_date,
+    market="DE",
+    currency="EUR",
+    locale="de-DE",
+):
+    start_airports = get_nearest_airports(start_city)
+    destination_airports = get_nearest_airports(destination_city)
+
+    cars1 = []
+    cars2 = []
+
+    for airport in start_airports:
+        cars1.append(
+            get_cheapest_ride(
+                get_coordinates_skyscanner(start_city), airport, start_date, end_date
+            )
+        )
+    for airport in destination_airports:
+        cars2.append(
+            get_cheapest_ride(
+                airport,
+                get_coordinates_skyscanner(destination_city),
+                start_date,
+                end_date,
+            )
+        )
+
+    flights = find_flight_routes(start_date, destination_city)
+
+    return combine_car_plane(cars1, flights, cars2)
+
 
 
 def combine_car_plane(cars1, flights, cars2):
@@ -327,7 +389,7 @@ def combine_car_plane(cars1, flights, cars2):
     return sorted_combined_route
 
 
-flights = find_flight_route(["FRA", "STR"], ["TXL", "MUC"])
+flights = find_flight_routes(["FRA", "STR"], ["TXL", "MUC"])
 
 # combine_car_plane([""], flights, [""])
 
