@@ -1,3 +1,4 @@
+import json
 import tkinter as tk
 from tkinter import *
 from PIL import Image
@@ -15,7 +16,7 @@ HEIGHT = 700,
 WIDTH = 800,
 dataRecieved = True
 
-formHeight = 0.25
+
 formFont = 40
 
 # #Add Biene image (only need to use it once)
@@ -36,8 +37,18 @@ def sel():
 #    radioLabel.config(text = selection)
 
 def getData():
-    dataRecieved = True
-    offers(True)
+    data = {
+        "Car1Start": car1_start,
+        "FlightStart": flight_start,
+        "Car2Start": car2_start,
+        "Car2Destination": car2_destination,
+        "TotalPrice": total_price,
+    }
+    offers(data)
+
+def createGrids(i, maxI, input):
+    label = tk.Label(resultFrame, text = input, bd = 2)
+    label.place(relx = i/maxI, relwidth= 1/maxI,  relheight=1)
 
 #Seize of the Windows is set with the biggest "Form"
 canvas = tk.Canvas(root, height=HEIGHT, width=WIDTH)
@@ -116,23 +127,66 @@ inbInput.place(relx=0.7, relwidth=0.3, relheight=1)
 button = tk.Button (subFrame8, text="Submit Data to get the best trip for me", font=35, bg='blue', command = getData)
 button.place(relx=0.5, relwidth=1, relheight=1, anchor='n')
 
+car1_start = "Mannheim"
+flight_start = "FRA"
+car2_start = "TXL"
+car2_destination = "Silz"
+total_price = "154,05"
+
+
+
+resultFrame = tk.Frame(root, bg='orange', bd=5)
 
 #Result Frame
-def offers(myBool):
-    if myBool:
-        resultFrame = tk.Frame(root, bg='orange', bd=5)
-        resultFrame.place(relx=0.5,rely=0.55, relwidth=0.85, relheight=0.25, anchor='n')
-        #8. Row Radio Box
-        R1 = Radiobutton(resultFrame, text="Fastest (1)", variable=var, value=1, command=sel)
-        R2 = Radiobutton(resultFrame, text="Cheapest (2)", variable=var, value=2, command=sel)
-        R3 = Radiobutton(resultFrame, text="Fewest Changes (3)", variable=var, value=3, command=sel)
-        R1.pack( anchor = W )
-        R2.pack( anchor = W )
-        R3.pack( anchor = W)
+def offers(myData):
 
-offers(False)
+    #Create frame for the result!
+    resultFrame.place(relx=0.5,rely=0.55, relwidth=0.85, relheight=0.25, anchor='n')
+    anzInfos = (len(myData)-1)*2-1 #Länge des Objekts, kosten feld abziehen, jedes Item braucht 2 einträge bis auf das Ziel
+ 
 
-getData
+
+    #Daten auswerten & anzeigen
+    counter = 0  # running numbers @for for later layout purposes
+    for info in myData:
+        if "Destination" in info:
+            createGrids(counter, anzInfos, myData[info])
+            print(myData[info])
+        elif "Car" in info:
+            createGrids(counter, anzInfos, myData[info])
+            counter += 1
+            createGrids(counter, anzInfos, " --> Car --> ")
+            counter += 1
+            print(myData[info])
+            print("!!CAR!!")
+        elif "Flight" in info:
+            createGrids(counter, anzInfos, myData[info])
+            counter += 1
+            createGrids(counter, anzInfos, " --> Flight --> ")
+            counter += 1
+            print(myData[info])
+            print("!!FLIGHT!!")
+        elif "Price" in info:
+            #Push the price into the field
+            print("nice one (implement price field)")
+        else:
+            print("Unknown dataset, contact Admin")
+            print(myData[info])
+            print(info)
+
+
+
+    # #8. Row Radio Box
+    # R1 = Radiobutton(resultFrame, text = teststring, variable=var, value=1, command=sel)
+    # R2 = Radiobutton(resultFrame, text="Cheapest (2)", variable=var, value=2, command=sel)
+    # R3 = Radiobutton(resultFrame, text="Fewest Changes (3)", variable=var, value=3, command=sel)
+    # R1.pack( anchor = W )
+    # R2.pack( anchor = W )
+    # R3.pack( anchor = W)
+
+
+
+
 # label = Label(resultFrame)
 # label.place()
 
