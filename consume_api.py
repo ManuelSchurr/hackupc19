@@ -136,7 +136,7 @@ def get_live_prices(
 
     while status == "UpdatesPending":
         # Poll the result
-        req_url = f"{API_URL}flights/search/pricing/v1.0/?session_id={session_id}&stops=0&sortType=price&sortOrder=asc&originAirports=FRA&destinationAirports=TXL"
+        req_url = f"{API_URL}flights/search/pricing/v1.0/?session_id={session_id}"
         response = requests.get(req_url, headers=HEADERS)
 
         status = response.json()["Status"]
@@ -147,9 +147,9 @@ def get_live_prices(
         time.sleep(1)
 
     itineraries = response.json()["Itineraries"]
-    legs = response.json()["Legs"]
-    segments = response.json()["Segments"]
-    places = response.json()["Places"]
+    # legs = response.json()["Legs"]
+    # segments = response.json()["Segments"]
+    # places = response.json()["Places"]
 
     # txl_id = get_airport_id(places, "TXL")
     # fra_id = get_airport_id(places, "FRA")
@@ -164,11 +164,82 @@ def get_live_prices(
     with open("sorted.json", "w") as outfile:
         json.dump(sorted_response, outfile)
 
+    return sorted_response
 
-get_live_prices()
+
+# get_live_prices()
 
 
-# def find_flight_route(start_airports, destination_airports):
-#     for start_airport in start_airports:
-#         for destination_airport in destination_airports:
-#             pass
+def find_flight_route(start_airports, destination_airports):
+    routes = []
+    for start_airport in start_airports:
+        for destination_airport in destination_airports:
+            print(
+                f"Finding best connection. Currently checking: {start_airport} -> {destination_airport}"
+            )
+            sorted_response = get_live_prices(
+                origin_place=start_airport, destination_place=destination_airport
+            )
+
+            # Extract itinerary
+            itinerary = sorted_response["Itineraries"][0]
+
+            # Extract legs
+            legs = [
+                next(
+                    leg
+                    for leg in sorted_response["Legs"]
+                    if leg["Id"] == itinerary["OutboundLegId"]
+                ),
+                next(
+                    leg
+                    for leg in sorted_response["Legs"]
+                    if leg["Id"] == itinerary["InboundLegId"]
+                ),
+            ]
+            leg0_segments = []
+            leg1_segments = []
+
+            # Extract legs
+            for segment_id in legs[0]["SegmentIds"]:
+                leg0_segments.append(
+                    next(
+                        seg
+                        for seg in sorted_response["Segments"]
+                        if seg["Id"] == segment_id
+                    )
+                )
+            for segment_id in legs[1]["SegmentIds"]:
+                leg1_segments.append(
+                    next(
+                        seg
+                        for seg in sorted_response["Segments"]
+                        if seg["Id"] == segment_id
+                    )
+                )
+
+            segments = [
+                {
+                    "OutboundLegSegments": leg0_segments,
+                    "InboundLegSegments": leg1_segments,
+                }
+            ]
+
+            routes.append(
+                {
+                    "From": start_airport,
+                    "To": destination_airport,
+                    "Itinerary": itinerary,
+                    "Legs": legs,
+                    "Segments": segments,
+                }
+            )
+
+    with open("test.json", "w") as outfile:
+        json.dump(routes, outfile)
+
+    return routes
+
+
+find_flight_route(["FRA", "STR"], ["TXL", "MUC"])
+
