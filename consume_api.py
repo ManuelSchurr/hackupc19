@@ -75,11 +75,11 @@ HEADERS = {
 #     inbound_partial_date="2019-11-12",
 # ):
 
-    req_url = f"{API_URL}/flights/browse/browsegrid/v1.0/{country}/{currency}/{locale}/{origin_place}/{destination_place}/{outbound_partial_date}/{inbound_partial_date}/"
-    response = requests.get(req_url, headers=HEADERS)
+#     req_url = f"{API_URL}/flights/browse/browsegrid/v1.0/{country}/{currency}/{locale}/{origin_place}/{destination_place}/{outbound_partial_date}/{inbound_partial_date}/"
+#     response = requests.get(req_url, headers=HEADERS)
 
-    with open("dates_grid.json", "w") as outfile:
-        json.dump(response.json(), outfile)
+#     with open("dates_grid.json", "w") as outfile:
+#         json.dump(response.json(), outfile)
 
 
 # browse_quotes()
@@ -288,7 +288,7 @@ def combine_car_plane(cars1, flights, cars2):
                 car1_destination = car1["Destination"]
 
                 flight_start = flight["Start"]
-                flight_to = flight["Destination"]
+                flight_destination = flight["Destination"]
 
                 # TODO: Add airports back into the flights dict
                 # TODO: Consider flight stops
@@ -301,7 +301,7 @@ def combine_car_plane(cars1, flights, cars2):
 
                 if not car1_destination == flight_start:
                     continue
-                if not flight["DestinationAirport"] == car2_start:
+                if not flight_destination == car2_start:
                     continue
 
                 car1_price = car1["Car"]["price_all_days"]
@@ -314,7 +314,7 @@ def combine_car_plane(cars1, flights, cars2):
                     {
                         "Car1Start": car1_start,
                         "FlightStart": flight_start,
-                        "Car2Start": car2_start,
+                        "FlightDestination": flight_destination,
                         "Car2Destination": car2_destination,
                         "TotalPrice": total_price,
                     }
