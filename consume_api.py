@@ -253,7 +253,7 @@ def startCarHireLiveSession(
 ):
 
     req_url = f"{API_URL}/carhire/liveprices/v2/{market}/{currency}/{locale}/{pickupplace}/{dropoffplace}/{pickupdatetime}/{dropoffdatetime}/{driverage}"
-    response = requests.post(req_url, headers=headers)
+    response = requests.post(req_url, headers=heHEADERSaders)
 
     session_id = response.json()["session_id"]
 
@@ -263,7 +263,7 @@ def getCheapestRide():
     session_id = startCarHireLiveSession()
 
     req_url = f"{API_URL}/carhire/liveprices/v2/?session_id={session_id}"
-    response = requests.get(req_url, headers=headers)
+    response = requests.get(req_url, headers=HEADERS)
 
     rides = []
 
