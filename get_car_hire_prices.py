@@ -1,22 +1,23 @@
 from retrieve_nearest_airports import getCoordinates
 import requests
 import json
+import time
 
 
 API_KEY = "skyscanner-hackupc2019"
 API_URL = "https://www.skyscanner.net/g/chiron/api/v1/"
 
 
-headers = {"user-agent": "HackUPC19", "Accept": "application/json", "api-key": API_KEY, "userIp": "147.83.201.128", "Content-Type": "application/x-www-form-urlencoded"}
+headers = {"user-agent": "HackUPC19", "Accept": "application/json", "api-key": API_KEY}
 
 def startCarHireLiveSession(
     market = "DE",
     currency = "EUR",
     locale = "de-DE",
-    pickupplace  = "49.4875,8.466-latlong",
-    dropoffplace = "51.509865,-0.118092-latlong",
+    pickupplace  = "50.110924,8.682127-latlong",
+    dropoffplace = "49.4875,8.466-latlong",
     pickupdatetime = "2019-11-12T10:00", 
-    dropoffdatetime = "2019-11-15T10:00",
+    dropoffdatetime = "2019-11-13T10:00",
     driverage = "21"
 ):
 
@@ -26,3 +27,19 @@ def startCarHireLiveSession(
     session_id = response.json()["session_id"]
 
     return session_id
+
+def getCheapestRide():
+    session_id = startCarHireLiveSession()
+
+    req_url = f"{API_URL}/carhire/liveprices/v2/?session_id={session_id}"
+    response = requests.get(req_url, headers=headers)
+
+    rides = []
+
+    rides.append({"From": "start", "To": "Destination", "Ride": response.json()["cars"][0]})
+
+    with open ("rides.json", "w") as outfile:
+        json.dump(rides, outfile)
+
+   
+getCheapestRide()
