@@ -159,10 +159,10 @@ def get_live_prices(
         itineraries, key=lambda x: x["PricingOptions"][0]["Price"]
     )
 
-    with open("raw_dump.json", "w") as outfile:
-        json.dump(response.json(), outfile)
-    with open("sorted.json", "w") as outfile:
-        json.dump(sorted_response, outfile)
+    # with open("raw_dump.json", "w") as outfile:
+    #     json.dump(response.json(), outfile)
+    # with open("sorted.json", "w") as outfile:
+    #     json.dump(sorted_response, outfile)
 
     return sorted_response
 
@@ -228,8 +228,8 @@ def find_flight_route(start_airports, destination_airports):
 
             routes.append(
                 {
-                    "From": start_airport,
-                    "To": destination_airport,
+                    "Start": start_airport,
+                    "Destination": destination_airport,
                     "Itinerary": itinerary,
                     "Legs": legs,
                     "Segments": segments,
@@ -242,9 +242,6 @@ def find_flight_route(start_airports, destination_airports):
     return routes
 
 
-# find_flight_route(["FRA", "STR"], ["TXL", "MUC"])
-
-
 def combine_car_plane(cars1, flights, cars2):
     # Route = car1 + flight + car2
     combined_route = []
@@ -253,11 +250,21 @@ def combine_car_plane(cars1, flights, cars2):
         for flight in flights:
             for car2 in cars2:
                 car1_start = car1["Start"]
-                flight_start = flight["From"]
+                car1_destination = car1["Destination"]
+
+                flight_start = flight["Start"]
+                flight_to = flight["Destination"]
+
+                # TODO: Add airports back into the flights dict
+                # TODO: Consider flight stops
+                # for segment in flights["Segments"]["OutboundLegSegments"]:
+                #     out_segments.append(segment["OriginStation"])
+                # for segment in flights["Segments"]["InboundLegSegments"]:
+
                 car2_start = car2["Start"]
                 car2_destination = car2["Destination"]
 
-                if not car1["DestinationAirport"] == flight_start:
+                if not car1_destination == flight_start:
                     continue
                 if not flight["DestinationAirport"] == car2_start:
                     continue
@@ -287,5 +294,5 @@ def combine_car_plane(cars1, flights, cars2):
 
 flights = find_flight_route(["FRA", "STR"], ["TXL", "MUC"])
 
-combine_car_plane([""], flights, [""])
+# combine_car_plane([""], flights, [""])
 
