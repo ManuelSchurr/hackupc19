@@ -18,19 +18,21 @@ def getCoordinates(city):
 
     response = requests.request("GET", url, headers=headers, params=querystring)
 
-    global globalLat
-    global globalLng
-    globalLat = response.json()['results'][0]['geometry']['lat']
-    globalLng = response.json()['results'][0]['geometry']['lng']
+    Lat = response.json()['results'][0]['geometry']['lat']
+    Long = response.json()['results'][0]['geometry']['lng']
+
+    return f"{Lat},{Long}-latlong"
 
 # calls getCoordinates which translates the City Name into coordinates
 # takes coordiantes and searchRadius to output nearestAirports
 def getNearestAirport(city, searchRadius):
-    getCoordinates(city)
+    airportCoordinates = getCoordinates(city)
+    lat = airportCoordinates.partition(',')[0]
+    lng = airportCoordinates.partition(',')[2].partition('-')[0]
     RAPID_API_KEY = "fdd3d5c155msh470d36197a1bfd6p18b3ccjsn83b2a649205a"
     url = "https://cometari-airportsfinder-v1.p.rapidapi.com/api/airports/by-radius"
 
-    querystring = {"radius": searchRadius, "lng": globalLng, "lat": globalLat}
+    querystring = {"radius": searchRadius, "lng": lng, "lat": lat}
 
     headers = {
         "x-rapidapi-host": "cometari-airportsfinder-v1.p.rapidapi.com",
